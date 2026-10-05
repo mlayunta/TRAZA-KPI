@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KPIs Logística — TRAZA//CO2 Consultoría Logística</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --green:#22c55e; --red:#ef4444; --yellow:#eab308; --brand:#10b981; }
+* { box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+body { margin:0; background:var(--bg); color:var(--text); padding:20px; }
+.brand { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding:16px 20px; background:linear-gradient(90deg,#064e3b,#0f172a); border:1px solid var(--brand); border-radius:12px; margin-bottom:20px; }
+.brand .logo { font-size:1.5rem; font-weight:800; color:var(--brand); letter-spacing:1px; }
+.brand .logo span { color:var(--accent); }
+.brand .logo small { display:block; font-size:0.75rem; font-weight:400; color:var(--muted); letter-spacing:0.5px; }
+.brand .contact { font-size:0.82rem; color:var(--muted); text-align:right; line-height:1.5; }
+.brand .contact b { color:var(--text); display:block; font-size:0.95rem; }
+h1 { font-size:1.2rem; margin:0 0 4px; }
+.sub { color:var(--muted); font-size:0.85rem; margin-bottom:20px; }
+.tabs { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+.tab { padding:10px 18px; background:var(--card); border:1px solid #334155; border-radius:8px; cursor:pointer; font-size:0.9rem; }
+.tab.active { background:var(--accent); color:#0f172a; font-weight:600; border-color:var(--accent); }
+.tab.esg.active { background:var(--brand); border-color:var(--brand); }
+.grid { display:grid; grid-template-columns: 1fr 1fr; gap:20px; }
+@media(max-width:900px){ .grid{grid-template-columns:1fr;} .brand{flex-direction:column;align-items:flex-start;} .brand .contact{text-align:left;} }
+.card { background:var(--card); border:1px solid #334155; border-radius:12px; padding:18px; }
+.card h2 { font-size:1rem; margin:0 0 12px; color:var(--accent); }
+label { display:block; font-size:0.78rem; color:var(--muted); margin:8px 0 3px; }
+input { width:100%; padding:8px 10px; background:#0f172a; border:1px solid #334155; border-radius:6px; color:var(--text); font-size:0.9rem; }
+.kpi-row { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-bottom:1px solid #334155; }
+.kpi-row:last-child { border-bottom:none; }
+.kpi-name { font-size:0.85rem; }
+.kpi-val { font-weight:700; font-size:1rem; white-space:nowrap; margin-left:12px; }
+.ok { color:var(--green); } .bad { color:var(--red); }
+.bench { font-size:0.7rem; color:var(--muted); }
+.actions { margin-top:16px; display:flex; gap:8px; flex-wrap:wrap; }
+button { padding:8px 14px; border:none; border-radius:6px; cursor:pointer; font-size:0.8rem; }
+.btn-a { background:var(--accent); color:#0f172a; } .btn-b { background:#334155; color:var(--text); }
+.chart-wrap { height:320px; }
+.note { font-size:0.75rem; color:var(--muted); margin-top:10px; line-height:1.5; }
+.footer { margin-top:24px; text-align:center; font-size:0.75rem; color:var(--muted); border-top:1px solid #334155; padding-top:12px; }
+</style>
+</head>
+<body>
+<div class="brand">
+<div class="logo">TRAZA<span>//</span>CO2<small>Consultoría Logística</small></div>
+<div class="contact">
+  <b>Miguel Ángel Layunta López</b>
+  ✉️ mlayunta.lopez@gmail.com<br>
+  📞 698 910 833 &nbsp;·&nbsp; 📍 Zaragoza
+</div>
+</div>
+
+<h1>📊 KPIs Logística — Transporte y Almacenaje</h1>
+<div class="sub">Herramienta offline. Introduce datos brutos → KPIs, semáforos y radar automático.</div>
+
+<div class="tabs">
+<div class="tab active" data-tab="trans">🚚 Transporte</div>
+<div class="tab" data-tab="alm">🏭 Almacén</div>
+<div class="tab" data-tab="tra">🔗 Transversales</div>
+<div class="tab esg" data-tab="esg">🌱 Sostenibilidad (ESG)</div>
+<div class="tab" data-tab="met">📖 Metodología</div>
+</div>
+
+<div class="grid">
+<div class="card">
+  <h2>Datos de entrada</h2>
+  <div id="inputs"></div>
+  <div class="actions">
+    <button class="btn-a" onclick="exportar()">💾 Exportar datos</button>
+    <button class="btn-b" onclick="document.getElementById('file').click()">📂 Importar</button>
+    <input type="file" id="file" accept=".json" style="display:none" onchange="importar(event)">
+  </div>
+  <div class="note">Los datos no se guardan al cerrar el navegador. Usa Exportar/Importar para conservarlos.</div>
+</div>
+
+<div class="card">
+  <h2 id="chartTitle">Radar de KPIs</h2>
+  <div class="chart-wrap"><canvas id="radar"></canvas></div>
+</div>
+</div>
+
+<div class="card" style="margin-top:20px">
+<h2>Resultado de KPIs</h2>
+<div id="resultados"></div>
+</div>
+
+<div class="footer">TRAZA//CO2 Consultoría Logística · Miguel Ángel Layunta López · Zaragoza · Benchmarks orientativos: adáptalos a tu sector y canal.</div>
+
+<script>
+const FIELDS = {
+trans: [
+  {id:'costeTrans', label:'Coste total transporte (€)', def:125000},
+  {id:'kmTot', label:'Km totales recorridos', def:145000},
+  {id:'ventas', label:'Ventas netas (€)', def:2800000},
+  {id:'carga', label:'Peso/volumen cargado', def:9200},
+  {id:'cargaMax', label:'Peso/volumen máximo', def:12000},
+  {id:'entTiempo', label:'Entregas a tiempo', def:1180},
+  {id:'entTot', label:'Entregas totales', def:1250},
+  {id:'kmVacio', label:'Km en vacío', def:21000},
+  {id:'incid', label:'Nº incidencias', def:8},
+  {id:'viajes', label:'Nº viajes totales', def:620},
+  {id:'litros', label:'Litros consumidos', def:46500},
+  {id:'toneladas', label:'Toneladas transportadas', def:9200},
+  {id:'tco2Trans', label:'tCO₂e emitidas (transporte)', def:123.5},
+  {id:'horasCond', label:'Horas conductor efectivas', def:2100},
+  {id:'costeLM', label:'Coste última milla (€)', def:38000},
+],
+alm: [
+  {id:'costeAlm', label:'Coste total almacén (€)', def:68000},
+  {id:'unidades', label:'Unidades movidas', def:245000},
+  {id:'stockIni', label:'Stock inicial (€)', def:410000},
+  {id:'stockFin', label:'Stock final (€)', def:395000},
+  {id:'compras', label:'Compras del periodo (€)', def:1120000},
+  {id:'pedCompleto', label:'Pedidos servidos completos', def:1150},
+  {id:'pedTot', label:'Pedidos totales', def:1250},
+  {id:'refCorrectas', label:'Referencias correctas', def:1180},
+  {id:'refAuditadas', label:'Referencias auditadas', def:1200},
+  {id:'unidPrep', label:'Unidades preparadas', def:245000},
+  {id:'horasTrab', label:'Horas totales trabajadas', def:3200},
+  {id:'costePrep', label:'Coste total preparación (€)', def:41000},
+  {id:'lineas', label:'Nº líneas preparadas', def:98000},
+  {id:'lineasError', label:'Líneas con error', def:210},
+  {id:'ubicOcup', label:'Ubicaciones ocupadas', def:8450},
+  {id:'ubicTot', label:'Ubicaciones totales', def:10000},
+  {id:'cicloHoras', label:'Horas ciclo pedido (media)', def:18},
+  {id:'unidDev', label:'Unidades devueltas', def:7400},
+  {id:'unidEnv', label:'Unidades enviadas', def:245000},
+  {id:'costeAlmAnual', label:'Coste almacenaje anual (€)', def:816000},
+],
+tra: [
+  {id:'costeGestion', label:'Coste gestión (€)', def:15000},
+  {id:'pedSinInc', label:'Pedidos sin incidencias', def:1090},
+  {id:'diasCobro', label:'Días cobro clientes', def:45},
+  {id:'diasPago', label:'Días pago proveedores', def:60},
+],
+esg: [
+  {id:'kwhTot', label:'kWh totales almacén (energía)', def:185000},
+  {id:'kwhVerde', label:'kWh de origen renovable', def:62000},
+  {id:'co2Alm', label:'tCO₂e de almacén (energía)', def:21.8},
+  {id:'kmTrain', label:'Km en modo bajo-emisión (ferri/intermodal)', def:18000},
+  {id:'co2Base', label:'tCO₂e línea base (periodo anterior)', def:150},
+  {id:'precioCO2', label:'Precio CO₂ de referencia (€/tCO₂e)', def:80},
+]
+};
+
+let currentTab = 'trans';
+
+function buildInputs() {
+const cont = document.getElementById('inputs');
+cont.innerHTML = '';
+const list = FIELDS[currentTab] || [];
+if(!list.length){ cont.innerHTML = '<div class="note">Esta pestaña no requiere datos adicionales: se calcula con los datos ya introducidos en las otras pestañas.</div>'; return; }
+list.forEach(f => {
+  const div = document.createElement('div');
+  div.innerHTML = `<label>${f.label}</label><input type="number" id="${f.id}" value="${f.def}" oninput="calc()">`;
+  cont.appendChild(div);
+});
+}
+
+function getVal(id) { const el = document.getElementById(id); return el ? parseFloat(el.value)||0 : 0; }
+const safe = (a,b) => b ? a/b : 0;
+
+function kpiTransporte() {
+const d = {}; FIELDS.trans.forEach(f => d[f.id] = getVal(f.id));
+return [
+  {n:'Coste por kilómetro (€/km)', v:safe(d.costeTrans,d.kmTot), b:[0.6,1.2], dir:'min'},
+  {n:'Coste transporte / Ventas (%)', v:safe(d.costeTrans,d.ventas)*100, b:[3,8], dir:'min'},
+  {n:'Ocupación de carga (%)', v:safe(d.carga,d.cargaMax)*100, b:[80,90], dir:'min'},
+  {n:'Puntualidad OTD (%)', v:safe(d.entTiempo,d.entTot)*100, b:[95,100], dir:'min'},
+  {n:'Km en vacío (%)', v:safe(d.kmVacio,d.kmTot)*100, b:[0,20], dir:'min'},
+  {n:'Incidencias por viaje (%)', v:safe(d.incid,d.viajes)*100, b:[0,2], dir:'min'},
+  {n:'Consumo /100 km (L)', v:safe(d.litros,d.kmTot)*100, b:[25,35], dir:'min'},
+  {n:'Emisiones (kgCO₂e/t·km)', v:safe(d.tco2Trans,d.toneladas*d.kmTot)*1000, b:[0,0.12], dir:'min'},
+  {n:'Productividad conductor (ent/h)', v:safe(d.entTot,d.horasCond), b:[8,15], dir:'max'},
+  {n:'Coste por entrega (€)', v:safe(d.costeLM,d.entTot), b:[3,8], dir:'min'},
+];
+}
+
+function kpiAlmacen() {
+const d = {}; FIELDS.alm.forEach(f => d[f.id] = getVal(f.id));
+const invMedio = (d.stockIni + d.stockFin)/2;
+const cogs = d.stockIni + d.compras - d.stockFin;
+const rot = safe(cogs, invMedio);
+return [
+  {n:'Coste almacenaje / unidad (€)', v:safe(d.costeAlm,d.unidades), b:[0.5,3], dir:'min'},
+  {n:'Rotación de inventario (vueltas)', v:rot, b:[4,12], dir:'max'},
+  {n:'Días cobertura (DOI)', v:rot?365/rot:0, b:[30,60], dir:'min'},
+  {n:'Fill Rate pedido (%)', v:safe(d.pedCompleto,d.pedTot)*100, b:[95,100], dir:'min'},
+  {n:'Exactitud inventario IRA (%)', v:safe(d.refCorrectas,d.refAuditadas)*100, b:[98,100], dir:'min'},
+  {n:'Productividad (u/h)', v:safe(d.unidPrep,d.horasTrab), b:[40,120], dir:'max'},
+  {n:'Coste picking / línea (€)', v:safe(d.costePrep,d.lineas), b:[0.15,0.6], dir:'min'},
+  {n:'Errores picking (%)', v:safe(d.lineasError,d.lineas)*100, b:[0,0.5], dir:'min'},
+  {n:'Ocupación almacén (%)', v:safe(d.ubicOcup,d.ubicTot)*100, b:[75,85], dir:'min'},
+  {n:'Ciclo de pedido (h)', v:d.cicloHoras, b:[0,24], dir:'min'},
+  {n:'Devoluciones (%)', v:safe(d.unidDev,d.unidEnv)*100, b:[0,15], dir:'min'},
+  {n:'Coste alm. / valor inv. (%)', v:safe(d.costeAlmAnual,invMedio)*100, b:[0,25], dir:'min'},
+];
+}
+
+function kpiTransversales() {
+const d = {}; [...FIELDS.trans,...FIELDS.alm,...FIELDS.tra].forEach(f => d[f.id] = getVal(f.id));
+const invMedio = (d.stockIni + d.stockFin)/2;
+const cogs = d.stockIni + d.compras - d.stockFin;
+const rot = safe(cogs, invMedio);
+const doi = rot?365/rot:0;
+return [
+  {n:'Coste logístico total / Ventas (%)', v:safe(d.costeTrans+d.costeAlm+d.costeGestion,d.ventas)*100, b:[0,12], dir:'min'},
+  {n:'Perfect Order Rate (%)', v:safe(d.pedSinInc,d.pedTot)*100, b:[95,100], dir:'min'},
+  {n:'Cash-to-Cash (días)', v:doi + d.diasCobro - d.diasPago, b:[-30,45], dir:'min'},
+  {n:'Emisiones CO₂e totales (t)', v:d.tco2Trans + getVal('co2Alm'), b:[0,200], dir:'min'},
+];
+}
+
+function kpiESG() {
+const d = {}; [...FIELDS.trans,...FIELDS.alm,...FIELDS.esg].forEach(f => d[f.id] = getVal(f.id));
+const co2Total = d.tco2Trans + d.co2Alm;
+const unidades = d.unidades || d.unidEnv;
+const kmTot = d.kmTot;
+const reduccion = d.co2Base ? (d.co2Base - co2Total)/d.co2Base*100 : 0;
+const co2Evitado = Math.max(0, d.kmTrain * 0.09/1000 * (d.toneladas||1) * 0.6); // aprox: modal shift
+return [
+  {n:'Intensidad de carbono (kgCO₂e/t·km)', v:safe(co2Total,(d.toneladas||1)*kmTot)*1000, b:[0,0.12], dir:'min'},
+  {n:'Emisiones por unidad enviada (kgCO₂e/u)', v:safe(co2Total*1000,unidades), b:[0,1.5], dir:'min'},
+  {n:'% energía renovable (almacén)', v:safe(d.kwhVerde,d.kwhTot)*100, b:[50,100], dir:'max'},
+  {n:'Huella por pedido (kgCO₂e/pedido)', v:safe(co2Total*1000,d.pedTot), b:[0,50], dir:'min'},
+  {n:'Reducción vs línea base (%)', v:reduccion, b:[5,100], dir:'max'},
+  {n:'% km en modo bajo-emisión', v:safe(d.kmTrain,kmTot)*100, b:[20,100], dir:'max'},
+  {n:'CO₂ evitado por modal shift (t)', v:co2Evitado, b:[1,1000], dir:'max'},
+  {n:'Coste de carbono interno (€)', v:co2Total*d.precioCO2, b:[0,20000], dir:'min'},
+];
+}
+
+function render() {
+let kpis = [];
+if(currentTab==='trans') kpis = kpiTransporte();
+else if(currentTab==='alm') kpis = kpiAlmacen();
+else if(currentTab==='tra') kpis = kpiTransversales();
+else if(currentTab==='esg') kpis = kpiESG();
+const cont = document.getElementById('resultados');
+cont.innerHTML = '';
+if(currentTab==='met'){
+  cont.innerHTML = `<div class="note">
+    <b>Metodología</b><br>
+    · Cada KPI se calcula en vivo desde los datos brutos de la pestaña correspondiente.<br>
+    · El semáforo compara el resultado con el benchmark del manual (✅ dentro de rango objetivo, ⚠️ fuera).<br>
+    · Los KPIs ESG combinan datos de transporte, almacén y energía. El CO₂ evitado por modal shift es una estimación simplificada (factor carretera ≈ 0,09 kgCO₂e/t·km, ahorro modal ≈ 60 %); para un cálculo riguroso usa los factores de emisión de la calculadora TRAZA//CO2.<br>
+    · Línea base ESG: introduce las tCO₂e del periodo anterior para medir la reducción.<br><br>
+    <b>Fórmulas de conversión útiles</b><br>
+    · Inventario medio = (Stock inicial + Stock final) / 2<br>
+    · COGS = Inventario inicial + Compras − Inventario final<br>
+    · Huella CO₂e = Combustible (L) × factor (kgCO₂e/L) / 1000 → tCO₂e
+  </div>`;
+  if(chart){ chart.destroy(); chart=null; }
+  return;
+}
+kpis.forEach(k => {
+  const ok = k.dir==='min' ? k.v<=k.b[1] : k.v>=k.b[0];
+  const row = document.createElement('div');
+  row.className='kpi-row';
+  row.innerHTML = `<div><div class="kpi-name">${k.n}</div><div class="bench">Objetivo: ${k.b[0]}–${k.b[1]} (${k.dir==='min'?'mínimo necesario':'mínimo a alcanzar'})</div></div>
+    <div class="kpi-val ${ok?'ok':'bad'}">${k.v.toFixed(2)} ${ok?'✅':'⚠️'}</div>`;
+  cont.appendChild(row);
+});
+updateRadar(kpis);
+}
+
+let chart;
+function updateRadar(kpis) {
+const labels = kpis.map(k=>k.n.split(' (')[0]);
+const data = kpis.map(k=>{
+  const span = (k.b[1]-k.b[0])||1;
+  if(k.dir==='min') return Math.max(0, Math.min(100, (k.b[1]-k.v)/span*100));
+  return Math.max(0, Math.min(100, (k.v-k.b[0])/span*100));
+});
+if(chart) chart.destroy();
+chart = new Chart(document.getElementById('radar'), {
+  type:'radar',
+  data:{ labels, datasets:[{label:'Score (%)', data, backgroundColor:'rgba(56,189,248,0.25)', borderColor:'#38bdf8', pointBackgroundColor:'#38bdf8'}]},
+  options:{ responsive:true, maintainAspectRatio:false, scales:{ r:{ min:0, max:100, ticks:{display:false}, grid:{color:'#334155'}, angleLines:{color:'#334155'}, pointLabels:{color:'#94a3b8', font:{size:10}} } }, plugins:{legend:{display:false}} }
+});
+}
+
+function calc(){ render(); }
+
+function exportar(){
+const data = {};
+[...FIELDS.trans,...FIELDS.alm,...FIELDS.tra,...FIELDS.esg].forEach(f=>{ const el=document.getElementById(f.id); if(el) data[f.id]=el.value; });
+const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='kpi_logistica_trazaco2.json'; a.click();
+}
+
+function importar(e){
+const f = e.target.files[0]; if(!f) return;
+const r = new FileReader();
+r.onload = ev => { try{ const d=JSON.parse(ev.target.result); Object.keys(d).forEach(k=>{ const el=document.getElementById(k); if(el) el.value=d[k]; }); render(); }catch(err){alert('Archivo no válido');} };
+r.readAsText(f);
+}
+
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+t.classList.add('active');
+currentTab = t.dataset.tab;
+const titles = {trans:'Radar KPIs Transporte', alm:'Radar KPIs Almacén', tra:'Radar Transversales', esg:'Radar Sostenibilidad (ESG)', met:'Metodología'};
+document.getElementById('chartTitle').textContent = titles[currentTab];
+buildInputs(); render();
+}));
+
+buildInputs(); render();
+</script>
+</body>
+</html>
