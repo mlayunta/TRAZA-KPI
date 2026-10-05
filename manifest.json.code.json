@@ -1,0 +1,15 @@
+{
+"name": "TRAZA//KPI - Logistics KPI Manager",
+"short_name": "TRAZA//KPI",
+"description": "Gestión de KPIs logísticos y ESG. Consultoría TRAZA//CO2 - Miguel Ángel Layunta López",
+"start_url": "./index.html",
+"scope": "./",
+"display": "standalone",
+"orientation": "portrait",
+"background_color": "#0f172a",
+"theme_color": "#10b981",
+"icons": [
+  { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+  { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+]
+}
